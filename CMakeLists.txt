@@ -56,7 +56,6 @@ target_include_directories(ProjetoFinal PRIVATE
 # Add any user requested libraries
 target_link_libraries(ProjetoFinal 
         hardware_i2c
-        hardware_pwm
         hardware_adc
         )
 
