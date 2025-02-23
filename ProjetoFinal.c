@@ -64,6 +64,18 @@ void gpio_irq_handler(uint gpio, uint32_t events)
     }
 }
 
+// Funcao para iniciar pino PWM
+uint pwm_init_gpio(uint gpio, uint wrap)
+{
+    gpio_set_function(gpio, GPIO_FUNC_PWM);
+
+    uint slice_num = pwm_gpio_to_slice_num(gpio);
+    pwm_set_wrap(slice_num, wrap);
+
+    pwm_set_enabled(slice_num, true);
+    return slice_num;
+}
+
 int main()
 {
     stdio_init_all();
