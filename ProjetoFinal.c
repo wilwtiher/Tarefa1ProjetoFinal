@@ -8,12 +8,20 @@
 #include "inc/font.h"
 #include "hardware/adc.h"
 
-// I2C defines
-// This example will use I2C0 on GPIO8 (SDA) and GPIO9 (SCL) running at 400KHz.
-// Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
-#define I2C_PORT i2c0
-#define I2C_SDA 8
-#define I2C_SCL 9
+// para o I2C
+#define I2C_PORT i2c1
+#define I2C_SDA 14
+#define I2C_SCL 15
+#define endereco 0x3C
+
+// Pinos
+#define led_RED 13   // Red=13, Blue=12, Green=11
+#define led_BLUE 12  // Red=13, Blue=12, Green=11
+#define led_GREEN 11 // Red=13, Blue=12, Green=11
+#define botao_pinA 5 // Botão A = 5, Botão B = 6 , BotãoJoy = 22
+#define joybutton 22 // Botão A = 5, Botão B = 6 , BotãoJoy = 22
+#define VRY_PIN 26   // Pino do Joystick Y
+#define VRX_PIN 27   // Pino do Joystick X
 
 
 
