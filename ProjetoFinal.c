@@ -23,7 +23,21 @@
 #define VRY_PIN 26   // Pino do Joystick Y
 #define VRX_PIN 27   // Pino do Joystick X
 
-
+// Variáveis globais
+static volatile uint32_t last_time = 0; // Armazena o tempo do último evento (em microssegundos)
+static volatile uint32_t tempo_media = 0; // Armazena o tempo do último evento (em microssegundos)
+static volatile uint32_t ponto_grafico = 0; // Armazena o tempo do último evento (em microssegundos)
+bool grafico = true; // Se mostra ou nao o grafico
+bool pressaoxbatimento = true; // Grafico da pressao ou do batimento
+bool Verde = false; // Variavel para Led Verde
+bool Amarelo = false; // Variavel para Led Amarelo
+bool Vermelho = false; // Variavel para Led Vermelho
+int8_t pressoes[128]; // Pontos grafico da pressao
+int8_t batimentos[128]; // Pontos grafico do batimento
+int8_t mpressao[10]; // Media da pressao (10 pontos por 1 segundo)
+int8_t mbatimentos[10]; // Media do batimento (10 pontos por 1 segundo)
+int8_t cpressao = 0; // Aonde armazena o valor da pressao atual
+int8_t cbatimentos = 0; // Aonde armazena o valor do batimento atual
 
 int main()
 {
