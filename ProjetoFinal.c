@@ -81,10 +81,12 @@ void gpio_irq_handler(uint gpio, uint32_t events)
                 if (alarme)
                 {
                     pwm_set_gpio_level(buzzer, 220);
+                    gpio_put(led_RED, true);
                 }
                 else
                 {
                     pwm_set_gpio_level(buzzer, 0);
+                    gpio_put(led_RED, false);
                 }
             }
         }
@@ -146,7 +148,7 @@ int main()
     ssd1306_send_data(&ssd);                                      // Envia os dados para o display
     // Limpa o display.
     ssd1306_fill(&ssd, false);
-    ssd1306_draw_string(&ssd, "Iniciando" , 20, 0);
+    ssd1306_draw_string(&ssd, "Iniciando", 20, 0);
     ssd1306_send_data(&ssd); // Atualiza o display
 
     for (int i = 0; i < 128; i++)
@@ -155,6 +157,7 @@ int main()
         batimentos[i] = 0;
     }
     tempo_media = to_us_since_boot(get_absolute_time());
+
     while (true)
     {
         current_time = to_us_since_boot(get_absolute_time());
@@ -165,6 +168,25 @@ int main()
 
         apressao = vrx_value / 17;
         abatimentos = vry_value / 25;
+
+        if (apressao > 160 || apressao < 90 || abatimentos > 120 || abatimentos < 40)
+        {
+            pwm_set_gpio_level(buzzer, 220);
+            gpio_put(led_RED, true);
+            gpio_put(led_GREEN, false);
+        }
+        else if (apressao > 140 || apressao < 100 || abatimentos > 110 || abatimentos < 50)
+        {
+            pwm_set_gpio_level(buzzer, 0);
+            gpio_put(led_RED, true);
+            gpio_put(led_GREEN, true);
+        }
+        else
+        {
+            pwm_set_gpio_level(buzzer, 0);
+            gpio_put(led_RED, false);
+            gpio_put(led_GREEN, true);
+        }
 
         if (current_time - tempo_media > 100000)
         {
@@ -196,39 +218,43 @@ int main()
             if (pressaoxbatimento)
             { // pressao
                 ssd1306_fill(&ssd, false);
-                ssd1306_draw_string(&ssd, "Pressao" , 28, 0);
+                ssd1306_draw_string(&ssd, "Pressao", 28, 0);
                 for (int i = 0; i < 128; i++)
                 {
                     contapressao = pressoes[i] / 4;
                     contapressao = contapressao - 64;
                     for (int j = 1; j < 6; j++)
                     {
-                        if(i+j > 127){
+                        if (i + j > 127)
+                        {
                             j = 6;
-                        }else{
-                            pressoes[i+j] = 0;
+                        }
+                        else
+                        {
+                            pressoes[i + j] = 0;
                         }
                     }
                     contapressao = abs(contapressao);
                     ssd1306_vline(&ssd, i, contapressao, 63, 1);
                     contapressao = 0;
-
-                    
                 }
                 ssd1306_send_data(&ssd); // Atualiza o display
             }
             else
             { // batimento
                 ssd1306_fill(&ssd, false);
-                ssd1306_draw_string(&ssd, "Batimentos" , 20, 0);
+                ssd1306_draw_string(&ssd, "Batimentos", 20, 0);
                 for (int i = 0; i < 128; i++)
                 {
                     for (int j = 1; j < 6; j++)
                     {
-                        if(i+j > 127){
+                        if (i + j > 127)
+                        {
                             j = 6;
-                        }else{
-                            batimentos[i+j] = 0;
+                        }
+                        else
+                        {
+                            batimentos[i + j] = 0;
                         }
                     }
                     contabatimentos = batimentos[i] / 3;
