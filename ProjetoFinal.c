@@ -37,6 +37,8 @@ bool Amarelo = false;          // Variavel para Led Amarelo
 bool Vermelho = false;         // Variavel para Led Vermelho
 int16_t contapressao = 0;
 int16_t contabatimentos = 0;
+char charpressao[3];
+char charbatimentos[3];
 uint8_t apressao;
 uint8_t abatimentos;
 uint8_t pressoes[128];   // Pontos grafico da pressao
@@ -153,8 +155,8 @@ int main()
 
     for (int i = 0; i < 128; i++)
     { // Zerar variaveis para evitar lixo armazenado
-        pressoes[i] = 0;
-        batimentos[i] = 0;
+        pressoes[i] = 4;
+        batimentos[i] = 3;
     }
     tempo_media = to_us_since_boot(get_absolute_time());
 
@@ -169,13 +171,13 @@ int main()
         apressao = vrx_value / 17;
         abatimentos = vry_value / 25;
 
-        if (apressao > 160 || apressao < 90 || abatimentos > 120 || abatimentos < 40)
+        if (apressao > 180 || apressao < 90 || abatimentos > 130 || abatimentos < 38)
         {
             pwm_set_gpio_level(buzzer, 220);
             gpio_put(led_RED, true);
             gpio_put(led_GREEN, false);
         }
-        else if (apressao > 140 || apressao < 100 || abatimentos > 110 || abatimentos < 50)
+        else if (apressao > 140 || apressao < 100 || abatimentos > 120 || abatimentos < 50)
         {
             pwm_set_gpio_level(buzzer, 0);
             gpio_put(led_RED, true);
@@ -225,16 +227,19 @@ int main()
                     contapressao = contapressao - 64;
                     for (int j = 1; j < 6; j++)
                     {
-                        if (i + j > 127)
+                        if (cgrafico + j > 127)
                         {
                             j = 6;
                         }
                         else
                         {
-                            pressoes[i + j] = 0;
+                            pressoes[cgrafico + j] = 0;
                         }
                     }
                     contapressao = abs(contapressao);
+                    if(contapressao == 0){
+                        contapressao = 1;
+                    }
                     ssd1306_vline(&ssd, i, contapressao, 63, 1);
                     contapressao = 0;
                 }
@@ -248,18 +253,21 @@ int main()
                 {
                     for (int j = 1; j < 6; j++)
                     {
-                        if (i + j > 127)
+                        if (cgrafico + j > 127)
                         {
                             j = 6;
                         }
                         else
                         {
-                            batimentos[i + j] = 0;
+                            batimentos[cgrafico + j] = 0;
                         }
                     }
                     contabatimentos = batimentos[i] / 3;
                     contabatimentos = contabatimentos - 64;
                     contabatimentos = abs(contabatimentos);
+                    if(contabatimentos == 0){
+                        contabatimentos = 1;
+                    }
                     ssd1306_vline(&ssd, i, contabatimentos, 63, 1);
                     contabatimentos = 0;
                 }
@@ -270,6 +278,25 @@ int main()
         { // mostrar valores atuais
             ssd1306_fill(&ssd, false);
             ssd1306_rect(&ssd, 3, 3, 122, 58, 1, 0); // Desenha um retângulo
+            sprintf(charbatimentos, "%d", abatimentos);
+            sprintf(charpressao, "%d", apressao);
+            ssd1306_draw_string(&ssd, "Batimentos ", 10, 8);
+            ssd1306_draw_string(&ssd, &charbatimentos[0], 96, 8);
+            if(abatimentos > 9){
+                ssd1306_draw_string(&ssd, &charbatimentos[1], 104, 8);
+                if(abatimentos > 99){
+                    ssd1306_draw_string(&ssd, &charbatimentos[2], 112, 8);
+                }
+            }
+            ssd1306_draw_string(&ssd, "Pressao ", 10, 24);
+            ssd1306_draw_string(&ssd, &charpressao[0], 96, 24);
+            if(apressao > 9){
+                ssd1306_draw_string(&ssd, &charpressao[1], 104, 24);
+                if(apressao > 99){
+                    ssd1306_draw_string(&ssd, &charpressao[2], 112, 24);
+                }
+            }
+            ssd1306_send_data(&ssd); // Atualiza o display
         }
     }
 }
