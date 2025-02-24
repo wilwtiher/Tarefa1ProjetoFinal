@@ -27,19 +27,23 @@
 // Variáveis globais
 static volatile uint32_t last_time = 0;     // Armazena o tempo do último evento (em microssegundos)
 static volatile uint32_t tempo_media = 0;   // Armazena o tempo para a media (em microssegundos)
-static volatile uint32_t ponto_grafico = 0; // Armazena o tempo para o grafico (em microssegundos)
 static volatile uint32_t current_time = 0;  // Armazena o tempo atual (em microssegundos)
-bool grafico = true;                        // Se mostra ou nao o grafico
+bool alarme;
+bool grafico = false;                        // Se mostra ou nao o grafico
 bool pressaoxbatimento = true;              // Grafico da pressao ou do batimento
 bool Verde = false;                         // Variavel para Led Verde
 bool Amarelo = false;                       // Variavel para Led Amarelo
 bool Vermelho = false;                      // Variavel para Led Vermelho
+int16_t contapressao = 0;
+int16_t contabatimentos = 0;
+int8_t apressao;
+int8_t abatimentos;
 int8_t pressoes[128];                       // Pontos grafico da pressao
 int8_t batimentos[128];                     // Pontos grafico do batimento
 int8_t mpressao[10];                        // Media da pressao (10 pontos por 1 segundo)
 int8_t mbatimentos[10];                     // Media do batimento (10 pontos por 1 segundo)
-int8_t cpressao = 0;                        // Aonde armazena o valor da pressao atual
-int8_t cbatimentos = 0;                     // Aonde armazena o valor do batimento atual
+int8_t cgrafico = 0;                        // Aonde armazena o valor da pressao e batimento atual
+int8_t cmedia = 0;                     // Aonde armazena o valor da media
 
 // Função de interrupção com debouncing
 void gpio_irq_handler(uint gpio, uint32_t events)
@@ -54,9 +58,22 @@ void gpio_irq_handler(uint gpio, uint32_t events)
         }
         if (gpio == botao_pinA)
         {
+            if(grafico){
+                pressaoxbatimento = !pressaoxbatimento;
+            }else{
+                alarme = !alarme;
+                if (alarme)
+                {
+                    gpio_put(buzzer, true);
+                }else{
+                    gpio_put(buzzer, false);
+                }
+                
+            }
         }
         if (gpio == botao_pinB)
         {
+            grafico = !grafico;
         }
         last_time = current_time; // Atualiza o tempo do último evento
     }
@@ -117,6 +134,7 @@ int main()
         pressoes[i] = 0;
         batimentos[i] = 0;
     }
+    tempo_media = to_us_since_boot(get_absolute_time());
     while (true)
     {
         current_time = to_us_since_boot(get_absolute_time());
@@ -124,5 +142,44 @@ int main()
         int16_t vrx_value = adc_read();
         adc_select_input(0);
         int16_t vry_value = adc_read();
+
+
+        apressao = vrx_value / 17;
+        abatimentos = vry_value / 25;
+
+
+        if (current_time - tempo_media > 100000){
+            tempo_media = to_us_since_boot(get_absolute_time());
+            mpressao[cmedia] = apressao;
+            mbatimentos[cmedia] = abatimentos;
+            cmedia++;
+            if(cmedia == 10){
+                cmedia = 0;
+                for (int i = 0; i < 10; i++)
+                {
+                    contapressao = contapressao + mpressao[i];
+                    contabatimentos = contabatimentos + mbatimentos[i];
+                }
+                pressoes[cgrafico] = contapressao/10;
+                batimentos[cgrafico] = contabatimentos/10;
+                contapressao = 0;
+                contabatimentos = 0;
+                cgrafico++;
+                if (cgrafico == 128)
+                {
+                    cgrafico = 0;
+                }
+            }
+        }
+        if(grafico){
+            if(pressaoxbatimento){ // pressao
+
+            }else{// batimento
+
+            }
+        }else{
+
+        }
+
     }
 }
