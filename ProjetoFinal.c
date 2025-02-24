@@ -6,6 +6,7 @@
 #include "inc/ssd1306.h"
 #include "inc/font.h"
 #include "hardware/adc.h"
+#include "hardware/pwm.h" //biblioteca para controlar o hardware de PWM
 
 // para o I2C
 #define I2C_PORT i2c1
@@ -36,14 +37,26 @@ bool Amarelo = false;          // Variavel para Led Amarelo
 bool Vermelho = false;         // Variavel para Led Vermelho
 int16_t contapressao = 0;
 int16_t contabatimentos = 0;
-int8_t apressao;
-int8_t abatimentos;
-int8_t pressoes[128];   // Pontos grafico da pressao
-int8_t batimentos[128]; // Pontos grafico do batimento
-int8_t mpressao[10];    // Media da pressao (10 pontos por 1 segundo)
-int8_t mbatimentos[10]; // Media do batimento (10 pontos por 1 segundo)
-int8_t cgrafico = 0;    // Aonde armazena o valor da pressao e batimento atual
-int8_t cmedia = 0;      // Aonde armazena o valor da media
+uint8_t apressao;
+uint8_t abatimentos;
+uint8_t pressoes[128];   // Pontos grafico da pressao
+uint8_t batimentos[128]; // Pontos grafico do batimento
+uint8_t mpressao[10];    // Media da pressao (10 pontos por 1 segundo)
+uint8_t mbatimentos[10]; // Media do batimento (10 pontos por 1 segundo)
+uint8_t cgrafico = 0;    // Aonde armazena o valor da pressao e batimento atual
+uint8_t cmedia = 0;      // Aonde armazena o valor da media
+
+// Funcao para iniciar pino PWM
+uint pwm_init_gpio(uint gpio, uint wrap)
+{
+    gpio_set_function(gpio, GPIO_FUNC_PWM);
+
+    uint slice_num = pwm_gpio_to_slice_num(gpio);
+    pwm_set_wrap(slice_num, wrap);
+
+    pwm_set_enabled(slice_num, true);
+    return slice_num;
+}
 
 // Função de interrupção com debouncing
 void gpio_irq_handler(uint gpio, uint32_t events)
@@ -67,11 +80,11 @@ void gpio_irq_handler(uint gpio, uint32_t events)
                 alarme = !alarme;
                 if (alarme)
                 {
-                    gpio_put(buzzer, true);
+                    pwm_set_gpio_level(buzzer, 220);
                 }
                 else
                 {
-                    gpio_put(buzzer, false);
+                    pwm_set_gpio_level(buzzer, 0);
                 }
             }
         }
@@ -111,6 +124,8 @@ int main()
     gpio_set_dir(led_BLUE, GPIO_OUT);  // Configura o pino como saída
     gpio_init(led_RED);                // Inicializa o pino do LED Vermelho
     gpio_set_dir(led_RED, GPIO_OUT);   // Configura o pino como saída
+    uint pwm_wrap = 4096;
+    uint pwm_slice_buzzer = pwm_init_gpio(buzzer, pwm_wrap);
 
     adc_init();
     adc_gpio_init(VRY_PIN);
@@ -131,6 +146,7 @@ int main()
     ssd1306_send_data(&ssd);                                      // Envia os dados para o display
     // Limpa o display.
     ssd1306_fill(&ssd, false);
+    ssd1306_draw_string(&ssd, "Iniciando" , 20, 0);
     ssd1306_send_data(&ssd); // Atualiza o display
 
     for (int i = 0; i < 128; i++)
@@ -179,25 +195,49 @@ int main()
         { // mostrar graficos
             if (pressaoxbatimento)
             { // pressao
+                ssd1306_fill(&ssd, false);
+                ssd1306_draw_string(&ssd, "Pressao" , 28, 0);
                 for (int i = 0; i < 128; i++)
                 {
-                    contapressao = pressoes[i] / 2;
-                    ssd1306_fill(&ssd, false);
-                    ssd1306_draw_string(&ssd, "Pressao" , 100, 120);
-                    ssd1306_vline(&ssd, i, 0, contapressao, 1);
+                    contapressao = pressoes[i] / 4;
+                    contapressao = contapressao - 64;
+                    for (int j = 1; j < 6; j++)
+                    {
+                        if(i+j > 127){
+                            j = 6;
+                        }else{
+                            pressoes[i+j] = 0;
+                        }
+                    }
+                    contapressao = abs(contapressao);
+                    ssd1306_vline(&ssd, i, contapressao, 63, 1);
                     contapressao = 0;
+
+                    
                 }
+                ssd1306_send_data(&ssd); // Atualiza o display
             }
             else
             { // batimento
+                ssd1306_fill(&ssd, false);
+                ssd1306_draw_string(&ssd, "Batimentos" , 20, 0);
                 for (int i = 0; i < 128; i++)
                 {
-                    contabatimentos = pressoes[i] / 1.64;
-                    ssd1306_fill(&ssd, false);
-                    ssd1306_draw_string(&ssd, "Batimentos" , 88, 120);
-                    ssd1306_vline(&ssd, i, 0, contabatimentos, 1);
+                    for (int j = 1; j < 6; j++)
+                    {
+                        if(i+j > 127){
+                            j = 6;
+                        }else{
+                            batimentos[i+j] = 0;
+                        }
+                    }
+                    contabatimentos = batimentos[i] / 3;
+                    contabatimentos = contabatimentos - 64;
+                    contabatimentos = abs(contabatimentos);
+                    ssd1306_vline(&ssd, i, contabatimentos, 63, 1);
                     contabatimentos = 0;
                 }
+                ssd1306_send_data(&ssd); // Atualiza o display
             }
         }
         else
