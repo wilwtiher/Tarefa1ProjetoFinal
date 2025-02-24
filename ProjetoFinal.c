@@ -55,7 +55,8 @@ uint pwm_init_gpio(uint gpio, uint wrap)
 
     uint slice_num = pwm_gpio_to_slice_num(gpio);
     pwm_set_wrap(slice_num, wrap);
-
+    // Define o clock divider como 250
+    pwm_set_clkdiv(slice_num, 250.0f);
     pwm_set_enabled(slice_num, true);
     return slice_num;
 }
@@ -80,16 +81,6 @@ void gpio_irq_handler(uint gpio, uint32_t events)
             else
             {
                 alarme = !alarme;
-                if (alarme)
-                {
-                    pwm_set_gpio_level(buzzer, 220);
-                    gpio_put(led_RED, true);
-                }
-                else
-                {
-                    pwm_set_gpio_level(buzzer, 0);
-                    gpio_put(led_RED, false);
-                }
             }
         }
         if (gpio == botao_pinB)
@@ -170,48 +161,56 @@ int main()
 
         apressao = vrx_value / 17;
         abatimentos = vry_value / 25;
-
-        if (apressao > 180 || apressao < 90 || abatimentos > 130 || abatimentos < 38)
+        if (alarme)
         {
-            pwm_set_gpio_level(buzzer, 220);
+            pwm_set_gpio_level(buzzer, 2048);
             gpio_put(led_RED, true);
             gpio_put(led_GREEN, false);
         }
-        else if (apressao > 140 || apressao < 100 || abatimentos > 120 || abatimentos < 50)
-        {
-            pwm_set_gpio_level(buzzer, 0);
-            gpio_put(led_RED, true);
-            gpio_put(led_GREEN, true);
-        }
         else
         {
-            pwm_set_gpio_level(buzzer, 0);
-            gpio_put(led_RED, false);
-            gpio_put(led_GREEN, true);
-        }
-
-        if (current_time - tempo_media > 100000)
-        {
-            tempo_media = to_us_since_boot(get_absolute_time());
-            mpressao[cmedia] = apressao;
-            mbatimentos[cmedia] = abatimentos;
-            cmedia++;
-            if (cmedia == 10)
+            if (apressao > 180 || apressao < 90 || abatimentos > 130 || abatimentos < 38)
             {
-                cmedia = 0;
-                for (int i = 0; i < 10; i++)
+                pwm_set_gpio_level(buzzer, 2048);
+                gpio_put(led_RED, true);
+                gpio_put(led_GREEN, false);
+            }
+            else if (apressao > 140 || apressao < 100 || abatimentos > 120 || abatimentos < 50)
+            {
+                pwm_set_gpio_level(buzzer, 0);
+                gpio_put(led_RED, true);
+                gpio_put(led_GREEN, true);
+            }
+            else
+            {
+                pwm_set_gpio_level(buzzer, 0);
+                gpio_put(led_RED, false);
+                gpio_put(led_GREEN, true);
+            }
+
+            if (current_time - tempo_media > 100000)
+            {
+                tempo_media = to_us_since_boot(get_absolute_time());
+                mpressao[cmedia] = apressao;
+                mbatimentos[cmedia] = abatimentos;
+                cmedia++;
+                if (cmedia == 10)
                 {
-                    contapressao = contapressao + mpressao[i];
-                    contabatimentos = contabatimentos + mbatimentos[i];
-                }
-                pressoes[cgrafico] = contapressao / 10;
-                batimentos[cgrafico] = contabatimentos / 10;
-                contapressao = 0;
-                contabatimentos = 0;
-                cgrafico++;
-                if (cgrafico == 128)
-                {
-                    cgrafico = 0;
+                    cmedia = 0;
+                    for (int i = 0; i < 10; i++)
+                    {
+                        contapressao = contapressao + mpressao[i];
+                        contabatimentos = contabatimentos + mbatimentos[i];
+                    }
+                    pressoes[cgrafico] = contapressao / 10;
+                    batimentos[cgrafico] = contabatimentos / 10;
+                    contapressao = 0;
+                    contabatimentos = 0;
+                    cgrafico++;
+                    if (cgrafico == 128)
+                    {
+                        cgrafico = 0;
+                    }
                 }
             }
         }
@@ -237,8 +236,9 @@ int main()
                         }
                     }
                     contapressao = abs(contapressao);
-                    if(contapressao == 0){
-                        contapressao = 1;
+                    if (contapressao == 128)
+                    {
+                        contapressao = 127;
                     }
                     ssd1306_vline(&ssd, i, contapressao, 63, 1);
                     contapressao = 0;
@@ -265,8 +265,9 @@ int main()
                     contabatimentos = batimentos[i] / 3;
                     contabatimentos = contabatimentos - 64;
                     contabatimentos = abs(contabatimentos);
-                    if(contabatimentos == 0){
-                        contabatimentos = 1;
+                    if (contabatimentos == 128)
+                    {
+                        contabatimentos = 127;
                     }
                     ssd1306_vline(&ssd, i, contabatimentos, 63, 1);
                     contabatimentos = 0;
@@ -282,17 +283,21 @@ int main()
             sprintf(charpressao, "%d", apressao);
             ssd1306_draw_string(&ssd, "Batimentos ", 10, 8);
             ssd1306_draw_string(&ssd, &charbatimentos[0], 96, 8);
-            if(abatimentos > 9){
+            if (abatimentos > 9)
+            {
                 ssd1306_draw_string(&ssd, &charbatimentos[1], 104, 8);
-                if(abatimentos > 99){
+                if (abatimentos > 99)
+                {
                     ssd1306_draw_string(&ssd, &charbatimentos[2], 112, 8);
                 }
             }
             ssd1306_draw_string(&ssd, "Pressao ", 10, 24);
             ssd1306_draw_string(&ssd, &charpressao[0], 96, 24);
-            if(apressao > 9){
+            if (apressao > 9)
+            {
                 ssd1306_draw_string(&ssd, &charpressao[1], 104, 24);
-                if(apressao > 99){
+                if (apressao > 99)
+                {
                     ssd1306_draw_string(&ssd, &charpressao[2], 112, 24);
                 }
             }
