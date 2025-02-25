@@ -32,9 +32,6 @@ static volatile uint32_t current_time = 0; // Armazena o tempo atual (em micross
 bool alarme;
 bool grafico = false;          // Se mostra ou nao o grafico
 bool pressaoxbatimento = true; // Grafico da pressao ou do batimento
-bool Verde = false;            // Variavel para Led Verde
-bool Amarelo = false;          // Variavel para Led Amarelo
-bool Vermelho = false;         // Variavel para Led Vermelho
 int16_t contapressao = 0;
 int16_t contabatimentos = 0;
 char charpressao[3];
