@@ -55,8 +55,8 @@ uint pwm_init_gpio(uint gpio, uint wrap)
 
     uint slice_num = pwm_gpio_to_slice_num(gpio);
     pwm_set_wrap(slice_num, wrap);
-    // Define o clock divider como 250
-    pwm_set_clkdiv(slice_num, 250.0f);
+    // Define o clock divider como 440
+    pwm_set_clkdiv(slice_num, 440.0f);
     pwm_set_enabled(slice_num, true);
     return slice_num;
 }
