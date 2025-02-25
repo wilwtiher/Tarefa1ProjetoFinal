@@ -16,11 +16,9 @@
 
 // Pinos
 #define led_RED 13   // Red=13, Blue=12, Green=11
-#define led_BLUE 12  // Red=13, Blue=12, Green=11
 #define led_GREEN 11 // Red=13, Blue=12, Green=11
 #define botao_pinA 5 // Botão A = 5, Botão B = 6 , BotãoJoy = 22
 #define botao_pinB 6 // Botão A = 5, Botão B = 6 , BotãoJoy = 22
-#define joybutton 22 // Botão A = 5, Botão B = 6 , BotãoJoy = 22
 #define VRY_PIN 26   // Pino do Joystick Y
 #define VRX_PIN 27   // Pino do Joystick X
 #define buzzer 10    // Pino do buzzer A
@@ -29,7 +27,7 @@
 static volatile uint32_t last_time = 0;    // Armazena o tempo do último evento (em microssegundos)
 static volatile uint32_t tempo_media = 0;  // Armazena o tempo para a media (em microssegundos)
 static volatile uint32_t current_time = 0; // Armazena o tempo atual (em microssegundos)
-bool alarme;
+bool alarme = false;
 bool grafico = false;          // Se mostra ou nao o grafico
 bool pressaoxbatimento = true; // Grafico da pressao ou do batimento
 int16_t contapressao = 0;
@@ -66,9 +64,6 @@ void gpio_irq_handler(uint gpio, uint32_t events)
     // Verifica se passou tempo suficiente desde o último evento
     if (current_time - last_time > 150000) // 150 ms de debouncing
     {
-        if (gpio == joybutton)
-        {
-        }
         if (gpio == botao_pinA)
         {
             if (grafico)
@@ -92,12 +87,6 @@ int main()
 {
     stdio_init_all();
 
-    gpio_init(joybutton);
-    gpio_set_dir(joybutton, GPIO_IN); // Configura o pino como entrada
-    gpio_pull_up(joybutton);          // Habilita o pull-up interno
-    // Configuração da interrupção com callback
-    gpio_set_irq_enabled_with_callback(joybutton, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
-
     gpio_init(botao_pinA);
     gpio_set_dir(botao_pinA, GPIO_IN); // Configura o pino como entrada
     gpio_pull_up(botao_pinA);          // Habilita o pull-up interno
@@ -112,8 +101,6 @@ int main()
 
     gpio_init(led_GREEN);              // Inicializa o pino do LED Verde
     gpio_set_dir(led_GREEN, GPIO_OUT); // Configura o pino como saída
-    gpio_init(led_BLUE);               // Inicializa o pino do LED Azul
-    gpio_set_dir(led_BLUE, GPIO_OUT);  // Configura o pino como saída
     gpio_init(led_RED);                // Inicializa o pino do LED Vermelho
     gpio_set_dir(led_RED, GPIO_OUT);   // Configura o pino como saída
     uint pwm_wrap = 4096;
