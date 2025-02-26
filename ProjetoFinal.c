@@ -171,30 +171,29 @@ int main()
                 gpio_put(led_RED, false);
                 gpio_put(led_GREEN, true);
             }
-
-            if (current_time - tempo_media > 100000)
+        }
+        if (current_time - tempo_media > 100000)
+        {
+            tempo_media = to_us_since_boot(get_absolute_time());
+            mpressao[cmedia] = apressao;
+            mbatimentos[cmedia] = abatimentos;
+            cmedia++;
+            if (cmedia == 10)
             {
-                tempo_media = to_us_since_boot(get_absolute_time());
-                mpressao[cmedia] = apressao;
-                mbatimentos[cmedia] = abatimentos;
-                cmedia++;
-                if (cmedia == 10)
+                cmedia = 0;
+                for (int i = 0; i < 10; i++)
                 {
-                    cmedia = 0;
-                    for (int i = 0; i < 10; i++)
-                    {
-                        contapressao = contapressao + mpressao[i];
-                        contabatimentos = contabatimentos + mbatimentos[i];
-                    }
-                    pressoes[cgrafico] = contapressao / 10;
-                    batimentos[cgrafico] = contabatimentos / 10;
-                    contapressao = 0;
-                    contabatimentos = 0;
-                    cgrafico++;
-                    if (cgrafico == 128)
-                    {
-                        cgrafico = 0;
-                    }
+                    contapressao = contapressao + mpressao[i];
+                    contabatimentos = contabatimentos + mbatimentos[i];
+                }
+                pressoes[cgrafico] = contapressao / 10;
+                batimentos[cgrafico] = contabatimentos / 10;
+                contapressao = 0;
+                contabatimentos = 0;
+                cgrafico++;
+                if (cgrafico == 128)
+                {
+                    cgrafico = 0;
                 }
             }
         }
